@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class PlayerSpawner : NetworkBehaviour
 {
-    public static PlayerSpawner Instance { get; private set; }
-
     [SerializeField] private PlayerController _playerPrefab;
 
     [Networked, Capacity(8)]
@@ -12,13 +10,13 @@ public class PlayerSpawner : NetworkBehaviour
 
     private void Awake()
     {
-        Instance = this;
+        Manager.SetPlayerSpawner(this);
         Manager.OnRunnerEventOriginatorSet += OnRunnerEventOriginatorSet;
     }
 
     private void OnDestroy()
     {
-        Instance = null;
+        Manager.SetPlayerSpawner(null);
         Manager.OnRunnerEventOriginatorSet -= OnRunnerEventOriginatorSet;
     }
 

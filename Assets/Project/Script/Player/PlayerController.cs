@@ -21,7 +21,7 @@ public class PlayerController : NetworkBehaviour
         if (HasStateAuthority)
         {
             Owner = Runner.LocalPlayer;
-            PlayerSpawner.Instance.RPC_RequestColor(Object);
+            Manager.PlayerSpawner.RPC_RequestColor(Object);
         }
     }
 
