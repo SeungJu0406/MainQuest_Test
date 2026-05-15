@@ -25,6 +25,11 @@ public class PlayerController : NetworkBehaviour
         _animator = GetComponentInChildren<Animator>();
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
+        // 리모트 플레이어: 물리 시뮬레이션 끄고 NetworkTransform만 위치 제어
+        // 두 클라이언트가 각자 물리를 돌리면 충돌 시 서로 다른 결과 → 떨림 발생
+        if (!HasStateAuthority)
+            _rb.isKinematic = true;
+
         if (HasStateAuthority)
         {
             Owner = Runner.LocalPlayer;
