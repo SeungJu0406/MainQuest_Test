@@ -5,12 +5,16 @@ public static class Manager
     public static RunnerEventOriginator RunnerEventOriginator { get; private set; }
     public static event Action<RunnerEventOriginator> OnRunnerEventOriginatorSet;
 
+    public static PlayerSpawner PlayerSpawner { get; private set; }
 
     public static void SetRunnerEventOriginator(RunnerEventOriginator runnerEventOriginator)
     {
         RunnerEventOriginator = runnerEventOriginator;
+        OnRunnerEventOriginatorSet?.Invoke(runnerEventOriginator);
+    }
 
-        if (OnRunnerEventOriginatorSet != null)
-            OnRunnerEventOriginatorSet?.Invoke(runnerEventOriginator);
+    public static void SetPlayerSpawner(PlayerSpawner playerSpawner)
+    {
+        PlayerSpawner = playerSpawner;
     }
 }
