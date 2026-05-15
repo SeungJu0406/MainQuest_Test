@@ -14,13 +14,21 @@ public class PlayerController : NetworkBehaviour
     private ChangeDetector _changes;
     private bool _colorRequested;
 
+
     public override void Spawned()
     {
+        ApplyColor(ColorIndex);
+
         _rb = GetComponent<Rigidbody2D>();
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
         if (HasStateAuthority)
             Owner = Runner.LocalPlayer;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        Manager.PlayerSpawner.RPC_EnqueueColor(ColorIndex);
     }
 
     private void Update()

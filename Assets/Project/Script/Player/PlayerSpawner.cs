@@ -8,6 +8,8 @@ public class PlayerSpawner : NetworkBehaviour
     [Networked, Capacity(8)]
     public NetworkLinkedList<int> AvailableColorIndex { get; }
 
+    
+
     private void Awake()
     {
         Manager.SetPlayerSpawner(this);
@@ -49,16 +51,6 @@ public class PlayerSpawner : NetworkBehaviour
     private void PlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         if (!HasStateAuthority) return;
-
-        foreach (var netObj in runner.GetAllNetworkObjects())
-        {
-            var ctrl = netObj.GetComponent<PlayerController>();
-            if (ctrl == null || ctrl.Owner != player) continue;
-
-            AvailableColorIndex.Add(ctrl.ColorIndex);
-            runner.Despawn(netObj);
-            break;
-        }
     }
 
     // 클라이언트 → MasterClient: 해당 인덱스 삭제 요청
@@ -66,5 +58,12 @@ public class PlayerSpawner : NetworkBehaviour
     public void RPC_DequeueColor(int colorIndex)
     {
         AvailableColorIndex.Remove(colorIndex);
+    }
+
+    // 클라이언트 → MasterClient: 해당 인덱스 추가 요청
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_EnqueueColor(int colorIndex)
+    {
+        AvailableColorIndex.Add(colorIndex);
     }
 }
