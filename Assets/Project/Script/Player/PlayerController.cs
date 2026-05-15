@@ -80,9 +80,6 @@ public class PlayerController : NetworkBehaviour
             _moveDir.z * _moveSpeed
         );
 
-        // 마우스 좌우(Yaw) 방향으로 캐릭터 정면을 항상 회전 (이동 유무 무관)
-        if (_cameraArm != null)
-            transform.rotation = Quaternion.Euler(0f, _cameraArm.Yaw, 0f);
     }
 
     public override void Render()
@@ -93,6 +90,12 @@ public class PlayerController : NetworkBehaviour
             float speed = new Vector2(_rb.linearVelocity.x, _rb.linearVelocity.z).magnitude;
             _animator.SetFloat("Speed", speed);
         }
+
+        // 로컬 플레이어: 매 프레임 CameraArm.Yaw로 시각 회전 갱신
+        // FixedUpdateNetwork는 고정 주기라 Yaw 변화를 매 프레임 반영 못해 떨림이 생김
+        // Render()는 매 프레임 실행되므로 여기서 덮어써서 부드럽게 처리
+        if (HasStateAuthority && _cameraArm != null)
+            transform.rotation = Quaternion.Euler(0f, _cameraArm.Yaw, 0f);
 
         foreach (var change in _changes.DetectChanges(this, out _, out _))
         {
