@@ -49,7 +49,7 @@ private void Update()
                 colorIndex = idx;
 
             ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
-            spawner.RPC_DequeueColor(colorIndex);     // MasterClient에 삭제 요청
+            spawner.RPC_DequeueColor(colorIndex, Runner.LocalPlayer);
         }
 
         _rb.linearVelocity = _moveDir * _moveSpeed;
