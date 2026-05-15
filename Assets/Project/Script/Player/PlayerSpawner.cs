@@ -10,7 +10,7 @@ public class PlayerSpawner : NetworkBehaviour
 
     private void Awake()
     {
-        Manager.SetPlayerSpawner(this);
+        // 이벤트 구독은 Awake에서 (Runner 설정 전에 등록 필요)
         Manager.OnRunnerEventOriginatorSet += OnRunnerEventOriginatorSet;
     }
 
@@ -20,8 +20,14 @@ public class PlayerSpawner : NetworkBehaviour
         Manager.OnRunnerEventOriginatorSet -= OnRunnerEventOriginatorSet;
     }
 
+    public bool IsSpawnedReady { get; private set; }
+
     public override void Spawned()
     {
+        // Fusion 초기화 완료 후 등록 → 항상 유효한 인스턴스만 Manager에 세팅
+        Manager.SetPlayerSpawner(this);
+        IsSpawnedReady = true;
+
         if (!HasStateAuthority) return;
 
         for (int i = 0; i < 4; i++)

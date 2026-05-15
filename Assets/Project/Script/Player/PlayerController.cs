@@ -47,7 +47,7 @@ public class PlayerController : NetworkBehaviour
         if (!_colorRequested)
         {
             var spawner = Manager.PlayerSpawner;
-            if (spawner == null || spawner.Object == null || spawner.AvailableColorIndex.Count == 0)
+            if (spawner == null || !spawner.IsSpawnedReady || spawner.AvailableColorIndex.Count == 0)
                 return;
 
             _colorRequested = true;
