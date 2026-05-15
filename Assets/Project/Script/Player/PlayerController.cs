@@ -26,12 +26,7 @@ public class PlayerController : NetworkBehaviour
             Owner = Runner.LocalPlayer;
     }
 
-    public override void Despawned(NetworkRunner runner, bool hasState)
-    {
-        Manager.PlayerSpawner.RPC_EnqueueColor(ColorIndex);
-    }
-
-    private void Update()
+private void Update()
     {
         if (!HasStateAuthority) return;
         _moveDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;

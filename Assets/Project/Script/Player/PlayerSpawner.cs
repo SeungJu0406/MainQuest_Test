@@ -51,6 +51,16 @@ public class PlayerSpawner : NetworkBehaviour
     private void PlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         if (!HasStateAuthority) return;
+
+        foreach (var netObj in runner.GetAllNetworkObjects())
+        {
+            var ctrl = netObj.GetComponent<PlayerController>();
+            if (ctrl == null || ctrl.Owner != player) continue;
+
+            AvailableColorIndex.Add(ctrl.ColorIndex);
+            runner.Despawn(netObj);
+            break;
+        }
     }
 
     // 클라이언트 → MasterClient: 해당 인덱스 삭제 요청
