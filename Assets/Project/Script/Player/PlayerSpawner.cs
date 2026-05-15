@@ -8,8 +8,6 @@ public class PlayerSpawner : NetworkBehaviour
     [Networked, Capacity(8)]
     public NetworkLinkedList<int> AvailableColorIndex { get; }
 
-    public bool IsSpawnedReady { get; private set; }
-
     private void Awake()
     {
         Manager.SetPlayerSpawner(this);
@@ -24,8 +22,6 @@ public class PlayerSpawner : NetworkBehaviour
 
     public override void Spawned()
     {
-        IsSpawnedReady = true;
-
         if (!HasStateAuthority) return;
 
         for (int i = 0; i < 4; i++)
