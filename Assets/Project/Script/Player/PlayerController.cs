@@ -15,7 +15,7 @@ public class PlayerController : NetworkBehaviour
     private ChangeDetector _changes;
     private Vector3 _moveDir;
     private bool _colorRequested;
-    private Camera _cam;
+    private CameraArm _cameraArm;
 
     public override void Spawned()
     {
@@ -25,13 +25,26 @@ public class PlayerController : NetworkBehaviour
         _animator = GetComponentInChildren<Animator>();
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
+        // 리모트 플레이어: 물리 시뮬레이션 끄고 NetworkTransform만 위치 제어
+        // 두 클라이언트가 각자 물리를 돌리면 충돌 시 서로 다른 결과 → 떨림 발생
+        if (!HasStateAuthority)
+            _rb.isKinematic = true;
+
         if (HasStateAuthority)
         {
             Owner = Runner.LocalPlayer;
             // 본인 클라이언트의 VirtualCamera만 활성화 (다른 플레이어 카메라는 비활성 유지)
             var vcam = GetComponentInChildren<CinemachineCamera>();
             if (vcam != null) vcam.gameObject.SetActive(true);
-            _cam = Camera.main;
+
+            // CameraArm 활성화 → 마우스 입력 수신 시작 + 커서 고정
+            _cameraArm = GetComponentInChildren<CameraArm>();
+            if (_cameraArm != null) _cameraArm.Activate();
+        }
+        else
+        {
+            _cameraArm = GetComponentInChildren<CameraArm>();
+            _cameraArm.gameObject.SetActive(false);
         }
     }
 
@@ -47,12 +60,11 @@ public class PlayerController : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
-        // 카메라 forward/right를 수평면(Y=0)에 투영해 이동 방향 계산
+        // CameraArm의 수평 회전(Yaw)만 기준으로 이동 방향 계산 (Pitch는 무관)
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
-        Vector3 camForward = Vector3.ProjectOnPlane(_cam.transform.forward, Vector3.up).normalized;
-        Vector3 camRight   = Vector3.ProjectOnPlane(_cam.transform.right,   Vector3.up).normalized;
-        _moveDir = (camForward * v + camRight * h).normalized;
+        Quaternion yawRotation = Quaternion.Euler(0f, _cameraArm.Yaw, 0f);
+        _moveDir = (yawRotation * Vector3.forward * v + yawRotation * Vector3.right * h).normalized;
     }
 
     public override void FixedUpdateNetwork()
@@ -78,9 +90,6 @@ public class PlayerController : NetworkBehaviour
             _moveDir.z * _moveSpeed
         );
 
-        // 이동 방향으로 캐릭터 회전
-        if (_moveDir != Vector3.zero)
-            transform.rotation = Quaternion.LookRotation(_moveDir);
     }
 
     public override void Render()
@@ -91,6 +100,12 @@ public class PlayerController : NetworkBehaviour
             float speed = new Vector2(_rb.linearVelocity.x, _rb.linearVelocity.z).magnitude;
             _animator.SetFloat("Speed", speed);
         }
+
+        // 로컬 플레이어: 매 프레임 CameraArm.Yaw로 시각 회전 갱신
+        // FixedUpdateNetwork는 고정 주기라 Yaw 변화를 매 프레임 반영 못해 떨림이 생김
+        // Render()는 매 프레임 실행되므로 여기서 덮어써서 부드럽게 처리
+        if (HasStateAuthority && _cameraArm != null)
+            transform.rotation = Quaternion.Euler(0f, _cameraArm.Yaw, 0f);
 
         foreach (var change in _changes.DetectChanges(this, out _, out _))
         {
