@@ -12,6 +12,7 @@ public class PlayerController : NetworkBehaviour
     private Vector2 _moveDir;
     private Rigidbody2D _rb;
     private ChangeDetector _changes;
+    private bool _colorRequested;
 
     public override void Spawned()
     {
@@ -19,10 +20,7 @@ public class PlayerController : NetworkBehaviour
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
         if (HasStateAuthority)
-        {
             Owner = Runner.LocalPlayer;
-            Manager.PlayerSpawner.RPC_RequestColor(Object);
-        }
     }
 
     private void Update()
@@ -34,6 +32,15 @@ public class PlayerController : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
+
+        // Spawned() 직후 RPC를 쏘면 MasterClient에 NetworkObject가 아직 미등록
+        // FixedUpdateNetwork 첫 틱에서 PlayerRef로 요청 (NetworkObject 전달 안 함)
+        if (!_colorRequested)
+        {
+            _colorRequested = true;
+            Manager.PlayerSpawner?.RPC_RequestColor(Runner.LocalPlayer);
+        }
+
         _rb.linearVelocity = _moveDir * _moveSpeed;
     }
 

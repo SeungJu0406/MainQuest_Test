@@ -58,16 +58,24 @@ public class PlayerSpawner : NetworkBehaviour
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_RequestColor(NetworkObject playerObj)
+    public void RPC_RequestColor(PlayerRef requestingPlayer)
     {
         if (!Runner.IsSharedModeMasterClient) return;
         if (AvailableColorIndex.Count == 0) return;
 
-        int colorIndex = -1;
-        foreach (var idx in AvailableColorIndex)
-            colorIndex = idx;
+        // NetworkObject 직접 전달 대신 Owner로 탐색 (타이밍 문제 회피)
+        foreach (var netObj in Runner.GetAllNetworkObjects())
+        {
+            var ctrl = netObj.GetComponent<PlayerController>();
+            if (ctrl == null || ctrl.Owner != requestingPlayer) continue;
 
-        AvailableColorIndex.Remove(colorIndex);
-        playerObj.GetComponent<PlayerController>().RPC_SetColor(colorIndex);
+            int colorIndex = -1;
+            foreach (var idx in AvailableColorIndex)
+                colorIndex = idx;
+
+            AvailableColorIndex.Remove(colorIndex);
+            ctrl.RPC_SetColor(colorIndex);
+            break;
+        }
     }
 }
