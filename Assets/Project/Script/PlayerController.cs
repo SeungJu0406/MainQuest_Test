@@ -8,15 +8,11 @@ public class PlayerController : NetworkBehaviour
 
     Vector2 _moveDir;
     Rigidbody2D _rb;
-
-    //GameObject _moveSuppoter;
     public override void Spawned()
     {
         if (HasStateAuthority == false) return;
 
         _rb = GetComponent<Rigidbody2D>();
-
-        //_moveSuppoter = new GameObject("MoveSupporter");
     }
 
     private void Update()
@@ -28,6 +24,7 @@ public class PlayerController : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (HasStateAuthority == false) return;
+
         MovePlayer();
     }
 
@@ -42,12 +39,8 @@ public class PlayerController : NetworkBehaviour
     /// </summary>
     void MovePlayer()
     {
-        _rb.linearVelocity = Vector2.zero;
-        if(_moveDir == Vector2.zero) return;
-
-        Vector2 moveDir = transform.right * _moveDir.x + transform.up * _moveDir.y;
-        moveDir.Normalize();
-        _rb.linearVelocity = moveDir * _moveSpeed;
+        //transform.Translate(_moveDir * _moveSpeed * Time.fixedDeltaTime);
+        _rb.linearVelocity = new Vector2(_moveDir.x * _moveSpeed, _moveDir.y * _moveSpeed);
     }
 
 }
