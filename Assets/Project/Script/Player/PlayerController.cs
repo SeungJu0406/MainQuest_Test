@@ -41,6 +41,11 @@ public class PlayerController : NetworkBehaviour
             _cameraArm = GetComponentInChildren<CameraArm>();
             if (_cameraArm != null) _cameraArm.Activate();
         }
+        else
+        {
+            _cameraArm = GetComponentInChildren<CameraArm>();
+            _cameraArm.gameObject.SetActive(false);
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
