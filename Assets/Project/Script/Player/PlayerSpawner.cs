@@ -8,10 +8,7 @@ public class PlayerSpawner : NetworkBehaviour
     [Networked, Capacity(8)]
     public NetworkLinkedList<int> AvailableColorIndex { get; }
 
-    [Networked, Capacity(8)]
-    private NetworkDictionary<PlayerRef, int> PlayerColorMap { get; }
-
-    
+    public bool IsSpawnedReady { get; private set; }
 
     private void Awake()
     {
@@ -24,8 +21,6 @@ public class PlayerSpawner : NetworkBehaviour
         Manager.SetPlayerSpawner(null);
         Manager.OnRunnerEventOriginatorSet -= OnRunnerEventOriginatorSet;
     }
-
-    public bool IsSpawnedReady { get; private set; }
 
     public override void Spawned()
     {
@@ -55,12 +50,6 @@ public class PlayerSpawner : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
-        if (PlayerColorMap.TryGet(player, out int colorIndex))
-        {
-            AvailableColorIndex.Add(colorIndex);
-            PlayerColorMap.Remove(player);
-        }
-
         foreach (var netObj in runner.GetAllNetworkObjects())
         {
             var ctrl = netObj.GetComponent<PlayerController>();
@@ -70,11 +59,14 @@ public class PlayerSpawner : NetworkBehaviour
         }
     }
 
-    // 클라이언트 → MasterClient: 색 대여 (리스트 삭제 + 맵 저장)
+    public void ReturnColor(int colorIndex)
+    {
+        AvailableColorIndex.Add(colorIndex);
+    }
+
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void RPC_DequeueColor(int colorIndex, PlayerRef player)
+    public void RPC_DequeueColor(int colorIndex)
     {
         AvailableColorIndex.Remove(colorIndex);
-        PlayerColorMap.Set(player, colorIndex);
     }
 }

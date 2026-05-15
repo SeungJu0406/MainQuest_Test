@@ -26,7 +26,15 @@ public class PlayerController : NetworkBehaviour
             Owner = Runner.LocalPlayer;
     }
 
-private void Update()
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        if (!hasState) return;
+        var spawner = Manager.PlayerSpawner;
+        if (spawner == null || !spawner.HasStateAuthority) return;
+        spawner.ReturnColor(ColorIndex);
+    }
+
+    private void Update()
     {
         if (!HasStateAuthority) return;
         _moveDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
@@ -49,7 +57,7 @@ private void Update()
                 colorIndex = idx;
 
             ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
-            spawner.RPC_DequeueColor(colorIndex, Runner.LocalPlayer);
+            spawner.RPC_DequeueColor(colorIndex);
         }
 
         _rb.linearVelocity = _moveDir * _moveSpeed;
