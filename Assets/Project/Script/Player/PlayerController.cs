@@ -35,17 +35,18 @@ public class PlayerController : NetworkBehaviour
 
         if (!_colorRequested)
         {
-            _colorRequested = true;
             var spawner = Manager.PlayerSpawner;
-            if (spawner != null && spawner.AvailableColorIndex.Count > 0)
-            {
-                int colorIndex = -1;
-                foreach (var idx in spawner.AvailableColorIndex)
-                    colorIndex = idx;
+            if (spawner == null || !spawner.IsSpawnedReady || spawner.AvailableColorIndex.Count == 0)
+                return;
 
-                ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
-                spawner.RPC_DequeueColor(colorIndex);     // MasterClient에 삭제 요청
-            }
+            _colorRequested = true;
+
+            int colorIndex = -1;
+            foreach (var idx in spawner.AvailableColorIndex)
+                colorIndex = idx;
+
+            ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
+            spawner.RPC_DequeueColor(colorIndex);     // MasterClient에 삭제 요청
         }
 
         _rb.linearVelocity = _moveDir * _moveSpeed;

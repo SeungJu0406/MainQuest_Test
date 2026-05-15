@@ -20,8 +20,12 @@ public class PlayerSpawner : NetworkBehaviour
         Manager.OnRunnerEventOriginatorSet -= OnRunnerEventOriginatorSet;
     }
 
+    public bool IsSpawnedReady { get; private set; }
+
     public override void Spawned()
     {
+        IsSpawnedReady = true;
+
         if (!HasStateAuthority) return;
 
         for (int i = 0; i < 4; i++)
