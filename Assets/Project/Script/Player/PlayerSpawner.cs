@@ -6,7 +6,7 @@ public class PlayerSpawner : NetworkBehaviour
     [SerializeField] private PlayerController _playerPrefab;
 
     [Networked, Capacity(8)]
-    private NetworkLinkedList<int> AvailableColorIndex { get; }
+    public NetworkLinkedList<int> AvailableColorIndex { get; }
 
     private void Awake()
     {
@@ -22,7 +22,7 @@ public class PlayerSpawner : NetworkBehaviour
 
     public override void Spawned()
     {
-        if (!Runner.IsSharedModeMasterClient) return;
+        if (!HasStateAuthority) return;
 
         for (int i = 0; i < 4; i++)
             AvailableColorIndex.Add(i);
@@ -44,7 +44,7 @@ public class PlayerSpawner : NetworkBehaviour
 
     private void PlayerLeft(NetworkRunner runner, PlayerRef player)
     {
-        if (!runner.IsSharedModeMasterClient) return;
+        if (!HasStateAuthority) return;
 
         foreach (var netObj in runner.GetAllNetworkObjects())
         {
@@ -57,25 +57,10 @@ public class PlayerSpawner : NetworkBehaviour
         }
     }
 
-    [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_RequestColor(PlayerRef requestingPlayer)
+    // 클라이언트 → MasterClient: 해당 인덱스 삭제 요청
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_DequeueColor(int colorIndex)
     {
-        if (!Runner.IsSharedModeMasterClient) return;
-        if (AvailableColorIndex.Count == 0) return;
-
-        // NetworkObject 직접 전달 대신 Owner로 탐색 (타이밍 문제 회피)
-        foreach (var netObj in Runner.GetAllNetworkObjects())
-        {
-            var ctrl = netObj.GetComponent<PlayerController>();
-            if (ctrl == null || ctrl.Owner != requestingPlayer) continue;
-
-            int colorIndex = -1;
-            foreach (var idx in AvailableColorIndex)
-                colorIndex = idx;
-
-            AvailableColorIndex.Remove(colorIndex);
-            ctrl.RPC_SetColor(colorIndex);
-            break;
-        }
+        AvailableColorIndex.Remove(colorIndex);
     }
 }

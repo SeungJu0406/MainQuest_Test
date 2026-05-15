@@ -33,12 +33,19 @@ public class PlayerController : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
-        // Spawned() 직후 RPC를 쏘면 MasterClient에 NetworkObject가 아직 미등록
-        // FixedUpdateNetwork 첫 틱에서 PlayerRef로 요청 (NetworkObject 전달 안 함)
         if (!_colorRequested)
         {
             _colorRequested = true;
-            Manager.PlayerSpawner?.RPC_RequestColor(Runner.LocalPlayer);
+            var spawner = Manager.PlayerSpawner;
+            if (spawner != null && spawner.AvailableColorIndex.Count > 0)
+            {
+                int colorIndex = -1;
+                foreach (var idx in spawner.AvailableColorIndex)
+                    colorIndex = idx;
+
+                ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
+                spawner.RPC_DequeueColor(colorIndex);     // MasterClient에 삭제 요청
+            }
         }
 
         _rb.linearVelocity = _moveDir * _moveSpeed;
@@ -51,12 +58,6 @@ public class PlayerController : NetworkBehaviour
             if (change == nameof(ColorIndex))
                 ApplyColor(ColorIndex);
         }
-    }
-
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void RPC_SetColor(int colorIndex)
-    {
-        ColorIndex = colorIndex;
     }
 
     private void ApplyColor(int index)
