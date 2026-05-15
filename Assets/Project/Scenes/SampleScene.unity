@@ -150,14 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _playerPrefab: {fileID: 2108483592802532317, guid: 81066d83a01993943aa7c51fb54b3818, type: 3}
-  _playerColors:
-  - {r: 1, g: 1, b: 1, a: 0}
-  - {r: 1, g: 0, b: 0, a: 0}
-  - {r: 0, g: 0.09776497, b: 1, a: 0}
-  - {r: 0.0073931217, g: 1, b: 0, a: 0}
-  - {r: 1, g: 0.9538098, b: 0, a: 0}
-  AvailableColors: []
-  _playerColor: {r: 0, g: 0, b: 0, a: 0}
+  AvailableColorIndex: 
 --- !u!4 &326136106
 Transform:
   m_ObjectHideFlags: 0
@@ -187,7 +180,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 3921793012
   ObjectInterest: 1
-  Flags: 262145
+  Flags: 131073
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 326136105}

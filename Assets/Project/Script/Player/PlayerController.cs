@@ -30,8 +30,8 @@ public class PlayerController : NetworkBehaviour
     {
         if (!hasState) return;
         var spawner = Manager.PlayerSpawner;
-        if (spawner == null || !spawner.HasStateAuthority) return;
-        spawner.ReturnColor(ColorIndex);
+        if (spawner == null) return;
+        spawner.RPC_EnqueueColor(ColorIndex);
     }
 
     private void Update()
@@ -52,9 +52,7 @@ public class PlayerController : NetworkBehaviour
 
             _colorRequested = true;
 
-            int colorIndex = -1;
-            foreach (var idx in spawner.AvailableColorIndex)
-                colorIndex = idx;
+            int colorIndex = spawner.AvailableColorIndex[spawner.AvailableColorIndex.Count - 1];
 
             ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
             spawner.RPC_DequeueColor(colorIndex);
