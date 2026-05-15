@@ -124,6 +124,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 217fd1ef4bf107a42b79828581125bf3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ColorIndex: 0
+  _colorPalette: {fileID: 11400000, guid: 20ec54092565ada468b1a51eacad6c72, type: 2}
   _moveSpeed: 5
 --- !u!58 &486070613601970125
 CircleCollider2D:
@@ -174,9 +176,9 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0
+  m_LinearDamping: 5
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -187,7 +189,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &5666478576340101927
 MonoBehaviour:
   m_ObjectHideFlags: 0
