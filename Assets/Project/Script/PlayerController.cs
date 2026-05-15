@@ -1,46 +1,29 @@
 using Fusion;
-using System;
 using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
-    [SerializeField] private float _moveSpeed = 5f; // 이동 속도
+    [SerializeField] private float _moveSpeed = 5f;
 
-    Vector2 _moveDir;
-    Rigidbody2D _rb;
+    private Vector2 _moveDir;
+    private Rigidbody2D _rb;
+
     public override void Spawned()
     {
-        if (HasStateAuthority == false) return;
-
         _rb = GetComponent<Rigidbody2D>();
     }
 
     private void Update()
     {
-        if (HasStateAuthority == false) return;
-        InputPlayer();
-    
-    }
-    public override void FixedUpdateNetwork()
-    {
-        if (HasStateAuthority == false) return;
-
-        MovePlayer();
-    }
-
-    private void InputPlayer()
-    {
+        if (!HasStateAuthority) return;
         _moveDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
     }
 
-
-    /// <summary>
-    /// 플레이어 이동
-    /// </summary>
-    void MovePlayer()
+    public override void FixedUpdateNetwork()
     {
-        //transform.Translate(_moveDir * _moveSpeed * Time.fixedDeltaTime);
-        _rb.linearVelocity = new Vector2(_moveDir.x * _moveSpeed, _moveDir.y * _moveSpeed);
-    }
+        if (!HasStateAuthority) return;
 
+        _rb.linearVelocity = _moveDir * _moveSpeed;
+
+    }
 }

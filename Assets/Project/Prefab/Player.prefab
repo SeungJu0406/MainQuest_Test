@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 7106136030086044517}
   - component: {fileID: 6804709892393775636}
   - component: {fileID: 987201371991979402}
-  - component: {fileID: 4736095206876774632}
   - component: {fileID: 2108483592802532317}
   - component: {fileID: 486070613601970125}
-  - component: {fileID: 8012367134056231472}
+  - component: {fileID: -7852877891840159510}
+  - component: {fileID: 5666478576340101927}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -109,24 +109,9 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 4736095206876774632}
   - {fileID: 2108483592802532317}
---- !u!114 &4736095206876774632
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6005965276018339806}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SyncScale: 0
-  SyncParent: 0
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
+  - {fileID: 5666478576340101927}
+  ForceRemoteRenderTimeframe: 0
 --- !u!114 &2108483592802532317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -139,6 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 217fd1ef4bf107a42b79828581125bf3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _moveSpeed: 5
 --- !u!58 &486070613601970125
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -175,7 +161,7 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.5
---- !u!50 &8012367134056231472
+--- !u!50 &-7852877891840159510
 Rigidbody2D:
   serializedVersion: 5
   m_ObjectHideFlags: 0
@@ -202,3 +188,26 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &5666478576340101927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6005965276018339806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5e690b5fb1084f5ab1c86457af401d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 1
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01

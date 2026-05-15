@@ -67,7 +67,9 @@ namespace Fusion {
       }
     }
 
-
+    public NetworkPrefabId GetPrefabId(NetworkRunner runner, NetworkObjectGuid prefabGuid) {
+      return runner.Prefabs.GetId(prefabGuid);
+    }
 
     protected virtual NetworkObject InstantiatePrefab(NetworkRunner runner, NetworkObject prefab) {
       return Instantiate(prefab);
@@ -83,6 +85,13 @@ namespace Fusion {
 
     protected virtual void DestroySceneObject(NetworkRunner runner, NetworkSceneObjectId sceneObjectId, NetworkObject instance) {
       Destroy(instance.gameObject);
+    }
+    
+    void INetworkObjectProvider.Shutdown(NetworkRunner runner) {
+      var prefabs = runner.Prefabs;
+      if (prefabs?.Options.UnloadUnusedPrefabsOnShutdown == true) {
+        prefabs.UnloadUnreferenced(includeIncompleteLoads: true);
+      }
     }
   }
 }
