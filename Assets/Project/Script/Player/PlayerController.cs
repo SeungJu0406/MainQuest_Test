@@ -1,20 +1,28 @@
 using Fusion;
-using System;
 using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
-    public int ColorIndex;
+    [Networked] public PlayerRef Owner { get; set; }
+    [Networked] public int ColorIndex { get; set; }
 
     [SerializeField] private ColorPalette _colorPalette;
     [SerializeField] private float _moveSpeed = 5f;
 
     private Vector2 _moveDir;
     private Rigidbody2D _rb;
+    private ChangeDetector _changes;
 
     public override void Spawned()
     {
         _rb = GetComponent<Rigidbody2D>();
+        _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
+        if (HasStateAuthority)
+        {
+            Owner = Runner.LocalPlayer;
+            PlayerSpawner.Instance.RPC_RequestColor(Object);
+        }
     }
 
     private void Update()
@@ -26,15 +34,28 @@ public class PlayerController : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
-
         _rb.linearVelocity = _moveDir * _moveSpeed;
-
     }
 
-    [Rpc(RpcSources.All, RpcTargets.All)]
-    internal void RPC_SetColor(int colorIndex)
+    public override void Render()
     {
-        Renderer renderer = GetComponent<Renderer>();
-        renderer.material.color = _colorPalette.Colors[colorIndex];
+        foreach (var change in _changes.DetectChanges(this, out _, out _))
+        {
+            if (change == nameof(ColorIndex))
+                ApplyColor(ColorIndex);
+        }
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_SetColor(int colorIndex)
+    {
+        ColorIndex = colorIndex;
+    }
+
+    private void ApplyColor(int index)
+    {
+        if (_colorPalette == null || index < 0 || index >= _colorPalette.Colors.Length) return;
+        var rend = GetComponent<Renderer>();
+        if (rend) rend.material.color = _colorPalette.Colors[index];
     }
 }
