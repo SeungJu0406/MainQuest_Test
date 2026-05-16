@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -16,6 +17,8 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float _maxThrowForce = 15f;
     [SerializeField] private float _maxChargeTime = 2f;
     [SerializeField] private GameObject _nearbyIndicator;    // 상대 플레이어 프리팹의 자식 UI
+    [SerializeField] private GameObject _stunText;          // 기절 상태 표시 UI
+    [SerializeField] private Slider _chargeSlider;        // 차징 상태 표시 UI
 
     private Vector2 _moveDir;
     private Rigidbody2D _rb;
@@ -83,6 +86,7 @@ public class PlayerController : NetworkBehaviour
             {
                 _isCharging = true;
                 _chargeValue = Mathf.Min(_chargeValue + Time.deltaTime / _maxChargeTime, 1f);
+                UpdateChargeSlider(nearby, _chargeValue);
             }
 
             // 던지기
@@ -153,9 +157,30 @@ public class PlayerController : NetworkBehaviour
             var pc = netObj.GetComponent<PlayerController>();
             if (pc == null || pc == this) continue;
             if (pc._nearbyIndicator != null)
+            {
                 pc._nearbyIndicator.SetActive(pc == nearby);
+                pc._chargeSlider.gameObject.SetActive(pc == nearby && _isCharging);
+            }
+
         }
     }
+
+    // 차징 중 상대플레이어 위 슬라이더 표시(로컬 전용)
+    private void UpdateChargeSlider(PlayerController nearby, float chargeValue)
+    {
+        if (_chargeSlider == null) return;
+        if (nearby == null) return;
+
+        nearby.UpdateChargeSliderValue(chargeValue);
+    }
+    public void UpdateChargeSliderValue(float value)
+    {
+        if (_chargeSlider == null) return;
+        
+
+        _chargeSlider.value = value;
+    }
+
 
     private void TryThrow(PlayerController target)
     {
@@ -194,10 +219,15 @@ public class PlayerController : NetworkBehaviour
     public void RPC_BroadcastStunned(NetworkBool stunned)
     {
         IsStunned = stunned;
-        if (!stunned)
+        if (stunned == false)
         {
             _isThrown = false;
             _rb.linearVelocity = Vector2.zero;
+            _stunText.SetActive(false);
+        }
+        else
+        {
+            _stunText.SetActive(true);
         }
     }
 
