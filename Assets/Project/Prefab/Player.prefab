@@ -679,15 +679,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _ColorIndex: 0
   _colorPalette: {fileID: 11400000, guid: 20ec54092565ada468b1a51eacad6c72, type: 2}
-  _moveSpeed: 5
-  _attackRadius: 1.5
-  _hitStunDuration: 3
-  _wallStunDuration: 1.5
-  _maxThrowForce: 50
-  _maxChargeTime: 2
-  _nearbyIndicator: {fileID: 3357243697190594529}
-  _stunText: {fileID: 4821458798478047302}
-  _chargeSlider: {fileID: 4806930862717446700}
+  _move:
+    _moveSpeed: 5
+  _battle:
+    _attackRadius: 1.5
+    _hitStunDuration: 2
+    _wallStunDuration: 1.5
+    _maxThrowForce: 50
+    _maxChargeTime: 2
+    _nearbyIndicator: {fileID: 3357243697190594529}
+    _stunText: {fileID: 4821458798478047302}
+    _chargeSlider: {fileID: 4806930862717446700}
 --- !u!58 &486070613601970125
 CircleCollider2D:
   m_ObjectHideFlags: 0
