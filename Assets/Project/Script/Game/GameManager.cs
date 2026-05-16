@@ -1,0 +1,191 @@
+using System;
+using System.Collections.Generic;
+using Fusion;
+using UnityEngine;
+
+public class GameManager : NetworkBehaviour
+{
+    [SerializeField] private QuestionData _questionData;
+    [SerializeField] private OXZone _oZone;
+    [SerializeField] private OXZone _xZone;
+    [SerializeField] private int _roundTime = 15;  // 라운드당 제한 시간(초)
+
+    // 모든 클라이언트에 동기화되는 타이머 (마스터가 감산)
+    [Networked] public int Timer { get; private set; }
+
+    // UI(MonoBehaviour)가 구독하는 정적 이벤트
+    public static event Action<string> OnQuestionPresented;  // 문제 텍스트
+    public static event Action         OnCountdownStarted;   // 5초 전 카운트다운 팝업
+    public static event Action         OnRoundEnded;         // 라운드 종료
+    public static event Action<bool>   OnResultReceived;     // 내 정답 여부
+
+    private int _currentIndex;
+    private bool _countdownSent;   // 5초 RPC 중복 방지
+    private bool _roundEndSent;    // 0초 RPC 중복 방지
+
+    // 마스터가 각 클라이언트의 제출을 수집
+    private readonly Dictionary<PlayerRef, bool> _submittedAnswers = new();
+    private bool _collectingAnswers;
+    private float _collectTimer;
+    private const float CollectTimeout = 2f;  // 전원 미제출 시 강제 마감 시간
+
+    private bool _correctIsO;  // 현재 문제 정답
+
+    public override void Spawned()
+    {
+        Manager.SetGameManager(this);
+
+        // 마스터 클라이언트만 게임 진행을 주도
+        if (!Runner.IsSharedModeMasterClient) return;
+
+        StartRound();
+    }
+
+    private void StartRound()
+    {
+        if (_questionData == null || _questionData.Questions.Length == 0) return;
+
+        var q = _questionData.Questions[_currentIndex % _questionData.Questions.Length];
+        _correctIsO = q.CorrectIsO;
+        Timer = _roundTime;
+        _countdownSent = false;
+        _roundEndSent = false;
+        _submittedAnswers.Clear();
+        _collectingAnswers = false;
+
+        RPC_PresentQuestion(q.Text);
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        // 마스터만 타이머 감산 및 RPC 발사
+        if (!Runner.IsSharedModeMasterClient) return;
+
+        // 답변 수집 중이면 타임아웃 처리
+        if (_collectingAnswers)
+        {
+            _collectTimer += Runner.DeltaTime;
+            if (_collectTimer >= CollectTimeout)
+                ProcessResults();
+            return;
+        }
+
+        if (Timer <= 0) return;
+
+        // 1초마다 감산 (FixedUpdateNetwork는 틱 단위라 누적 후 처리)
+        _tickAccum += Runner.DeltaTime;
+        if (_tickAccum >= 1f)
+        {
+            _tickAccum -= 1f;
+            Timer = Mathf.Max(0, Timer - 1);
+        }
+
+        // 5초 전: 카운트다운 UI 신호
+        if (Timer <= 5 && !_countdownSent)
+        {
+            _countdownSent = true;
+            RPC_ShowCountdown();
+        }
+
+        // 종료: 라운드 종료 신호
+        if (Timer <= 0 && !_roundEndSent)
+        {
+            _roundEndSent = true;
+            RPC_EndRound();
+        }
+    }
+
+    private float _tickAccum;
+
+    // ──────────────────────────────────────────
+    // RPC: 마스터 → 전체
+    // ──────────────────────────────────────────
+
+    // 문제 제시 (마스터가 발사, 전체 수신)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PresentQuestion(string question)
+    {
+        OnQuestionPresented?.Invoke(question);
+    }
+
+    // 5초 전 카운트다운 팝업 신호
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_ShowCountdown()
+    {
+        OnCountdownStarted?.Invoke();
+    }
+
+    // 라운드 종료: 각 클라이언트가 본인 위치로 정답 판정 후 제출
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_EndRound()
+    {
+        OnRoundEnded?.Invoke();
+
+        // 본인 PlayerController 위치 조회 → O/X존 판정 → 마스터에 제출
+        foreach (var netObj in Runner.GetAllNetworkObjects())
+        {
+            var pc = netObj.GetComponent<PlayerController>();
+            if (pc == null || !pc.HasStateAuthority) continue;
+
+            Vector2 pos = pc.transform.position;
+            bool isO = _oZone != null && _oZone.Contains(pos);
+            // X존이거나 어느 존도 아니면 false(X 선택)로 처리
+            RPC_SubmitAnswer(isO);
+            break;
+        }
+    }
+
+    // 결과 발표 (마스터가 발사, 전체 수신)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_AnnounceResult(PlayerRef player, NetworkBool correct)
+    {
+        // 본인 결과만 처리
+        if (Runner.LocalPlayer != player) return;
+
+        string resultText = correct ? "정답!" : "오답!";
+        Debug.Log($"[OX] {resultText}");
+        OnResultReceived?.Invoke(correct);
+    }
+
+    // ──────────────────────────────────────────
+    // RPC: 클라이언트 → 마스터
+    // ──────────────────────────────────────────
+
+    // 클라이언트가 본인의 정답(O존 여부)을 마스터에 제출
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_SubmitAnswer(NetworkBool isO, RpcInfo info = default)
+    {
+        if (_submittedAnswers.ContainsKey(info.Source)) return;
+
+        _submittedAnswers[info.Source] = isO;
+
+        // 첫 제출 시 수집 타임아웃 시작
+        if (!_collectingAnswers)
+        {
+            _collectingAnswers = true;
+            _collectTimer = 0f;
+        }
+
+        // 활성 플레이어 전원 제출 완료 시 즉시 처리
+        int activeCount = 0;
+        foreach (var _ in Runner.ActivePlayers) activeCount++;
+        if (_submittedAnswers.Count >= activeCount)
+            ProcessResults();
+    }
+
+    // 수집된 답변으로 정답/오답 판정 후 각 클라이언트에 전달
+    private void ProcessResults()
+    {
+        _collectingAnswers = false;
+
+        foreach (var kvp in _submittedAnswers)
+        {
+            bool correct = kvp.Value == _correctIsO;
+            RPC_AnnounceResult(kvp.Key, correct);
+        }
+
+        // 다음 라운드 준비 (3초 후 — 간단히 Invoke로 처리)
+        _currentIndex++;
+        Invoke(nameof(StartRound), 3f);
+    }
+}
