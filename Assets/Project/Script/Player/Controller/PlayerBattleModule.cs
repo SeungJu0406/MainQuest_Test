@@ -8,6 +8,7 @@ public class PlayerBattleModule
     [Header("전투")]
     [SerializeField] private float _attackRadius = 1.5f;
     [SerializeField] private float _hitStunDuration = 2f;
+    [SerializeField] private float _hitStopDuration = 0.2f;
     [SerializeField] private float _wallStunDuration = 1.5f;
     [SerializeField] private float _maxThrowForce = 15f;
     [SerializeField] private float _maxChargeTime = 2f;
@@ -33,6 +34,10 @@ public class PlayerBattleModule
         _controller = controller;
         _rb = rb;
         _runner = runner;
+
+        _nearbyIndicator.SetActive(false);
+        _stunText.SetActive(false);
+        _chargeSlider.gameObject.SetActive(false);
     }
 
     // PlayerController의 MilliSecondUpdate 코루틴에서 50ms마다 호출
@@ -58,7 +63,10 @@ public class PlayerBattleModule
             if (_isCharging) ResetCharge();
 
             if (Input.GetKeyDown(KeyCode.Space))
+            {
                 _nearby.RPC_GetHit();
+            }
+         
         }
         else
         {
@@ -93,6 +101,9 @@ public class PlayerBattleModule
     {
         _stunTimer = stunDuration;
         _controller.RPC_BroadcastStunned(true);
+
+        // 화면 경직
+        HitStop.Instance.Do(_hitStopDuration);
     }
 
     public void OnStunned(bool stunned)

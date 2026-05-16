@@ -1,4 +1,6 @@
 using Fusion;
+using NSJ_Player;
+using System;
 using System.Collections;
 using UnityEngine;
 using Utility;
@@ -8,15 +10,41 @@ public class PlayerController : NetworkBehaviour
     [Networked] public PlayerRef Owner { get; set; }
     [Networked] public int ColorIndex { get; set; }
 
+    [SerializeField] private GameObject _ownerIndicator;
+    [Serializable]
+    public struct OwnerIndicatorMoveValue
+    {
+        public float MaxY;
+        public float MinY;
+        public float Speed;
+        public bool IsUp;
+    }
+    [SerializeField] private OwnerIndicatorMoveValue _ownerIndicatorMoveValue;
+
+
     [SerializeField] private ColorPalette _colorPalette;
     [SerializeField] private PlayerMoveModule _move;
     [SerializeField] private PlayerBattleModule _battle;
+    [SerializeField] private PlayerStateMachine _stateMachine;
 
-    private Rigidbody2D _rb;
+
+
+    [HideInInspector] public Rigidbody2D Rb;
+    [HideInInspector] public Vector2 MoveDir;
+    [Networked]public PlayerState.State CurState { get; set; }
+    [HideInInspector] public PlayerView View;
     private ChangeDetector _changes;
     private bool _colorRequested;
+    private SpriteRenderer _renderer;
 
     public bool IsStunned => _battle.IsStunned;
+
+    private void Awake()
+    {
+        Rb = GetComponent<Rigidbody2D>();
+        _renderer = GetComponent<SpriteRenderer>();
+        View = GetComponent<PlayerView>();
+    }
 
     private void Start()
     {
@@ -25,15 +53,21 @@ public class PlayerController : NetworkBehaviour
 
     public override void Spawned()
     {
-        _rb = GetComponent<Rigidbody2D>();
+        Rb = GetComponent<Rigidbody2D>();
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
         ApplyColor(ColorIndex);
-        _move.Init(_rb);
-        _battle.Init(this, _rb, Runner);
+        _move.Init(this, Rb);
+        _battle.Init(this, Rb, Runner);
+        _stateMachine.Initialize(this);
 
         if (HasStateAuthority)
             Owner = Runner.LocalPlayer;
+        _ownerIndicator.SetActive(Owner == Runner.LocalPlayer);
+
+        if (HasStateAuthority == false) return;
+
+        ChangeState(PlayerState.State.Idle);
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -58,6 +92,16 @@ public class PlayerController : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            //Test용
+            _stateMachine.ChangeState(PlayerState.State.Move);
+        }
+
+        _stateMachine.Update();
+
+        MoveOwnIndicator();
+
         _move.ReadInput();
 
         if (_battle.IsStunned)
@@ -72,6 +116,8 @@ public class PlayerController : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
+
+        _stateMachine.FixedUpdateNetwork();
 
         if (_battle.IsStunned)
         {
@@ -111,6 +157,38 @@ public class PlayerController : NetworkBehaviour
         if (col.gameObject.layer == LayerMask.NameToLayer("Wall"))
             _battle.OnWallHit();
     }
+    //=====================================================================================
+
+    /// <summary>
+    /// 상태를 교체합니다.
+    /// </summary>
+    /// <param name="state"></param>
+    public void ChangeState(PlayerState.State state, Action callback = null) => _stateMachine.ChangeState(state, callback);
+    public PlayerState GetCurState() => _stateMachine.GetCurState();
+    public PlayerState GetPrevState() => _stateMachine.GetPrevState();
+    private void MoveOwnIndicator()
+    {
+        if (_ownerIndicator.activeSelf == true)
+        {
+            // 하드코딩 
+            // IsUp가 true면 MaxY로, false면 MinY로 이동
+            // 최대에서 IsUp가 true면 false로, 최소에서 IsUp가 false면 true로 변경
+            _ownerIndicator.transform.localPosition = new Vector3(
+                _ownerIndicator.transform.localPosition.x,
+                  _ownerIndicator.transform.localPosition.y + _ownerIndicatorMoveValue.Speed * (_ownerIndicatorMoveValue.IsUp ? 1 : -1) * Time.deltaTime,
+                _ownerIndicator.transform.localPosition.z);
+
+            if (_ownerIndicator.transform.localPosition.y >= _ownerIndicatorMoveValue.MaxY)
+            {
+                _ownerIndicatorMoveValue.IsUp = false;
+
+            }
+            else if (_ownerIndicator.transform.localPosition.y <= _ownerIndicatorMoveValue.MinY)
+            {
+                _ownerIndicatorMoveValue.IsUp = true;
+            }
+        }
+    }
 
     // 다른 플레이어의 BattleModule이 이 플레이어의 인디케이터/슬라이더를 제어할 때 사용
     public void SetNearbyIndicator(bool show, bool showCharge) => _battle.SetNearbyIndicator(show, showCharge);
@@ -128,6 +206,13 @@ public class PlayerController : NetworkBehaviour
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_GetThrown(float directionX, float force) => _battle.OnThrown(directionX, force);
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_BroadcastSpriteFlipX(bool isLeft)
+    {
+        if (_renderer == null) return;
+        _renderer.flipX = isLeft;
+    }
 
     // ──────────────────────────────────────────
     // 유틸
