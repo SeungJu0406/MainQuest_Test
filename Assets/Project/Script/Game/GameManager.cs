@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
-public class GameManager : NetworkBehaviour, IStateAuthorityChanged
+public class GameManager : NetworkBehaviour
 {
     [SerializeField] private QuestionData _questionData;
     [SerializeField] private OXZone _oZone;
@@ -31,34 +31,33 @@ public class GameManager : NetworkBehaviour, IStateAuthorityChanged
     private float _collectTimer;
     private const float CollectTimeout = 2f;  // 전원 미제출 시 강제 마감 시간
 
-    private bool _correctIsO;  // 현재 문제 정답 (CurrentQuestionIndex로 언제든 재구성 가능)
+    private bool _correctIsO;    // 현재 문제 정답 (CurrentQuestionIndex로 언제든 재구성 가능)
+    private bool _wasMaster;     // 이전 틱에 마스터였는지 — 마스터 교체 감지용
 
     public override void Spawned()
     {
         Manager.SetGameManager(this);
 
-        // 마스터 클라이언트만 게임 진행을 주도
         if (!Runner.IsSharedModeMasterClient) return;
 
+        _wasMaster = true;
         _startView.ActivateButton(true);
     }
 
-    // 마스터 교체 시 Fusion이 호출 — 새 마스터가 동기화된 값으로 로컬 상태 재구성
-    public void StateAuthorityChanged()
+    // 새 마스터가 됐을 때 동기화된 [Networked] 값으로 로컬 상태 재구성
+    private void OnBecameMaster()
     {
-        if (!Runner.IsSharedModeMasterClient) return;
-
-        // CurrentQuestionIndex, Timer는 이미 [Networked]로 동기화되어 있음
+        // CurrentQuestionIndex, Timer는 [Networked]로 이미 동기화되어 있음
         // _correctIsO만 인덱스로 재파생
         if (_questionData != null && _questionData.Questions.Length > 0)
             _correctIsO = _questionData.Questions[CurrentQuestionIndex % _questionData.Questions.Length].CorrectIsO;
 
-        // Timer 상태에 맞게 플래그 복원 (_tickAccum은 최대 1초 오차로 허용)
+        // Timer 상태에 맞게 플래그 복원 (_tickAccum은 최대 1초 오차 허용)
         _countdownSent = Timer <= 5;
         _roundEndSent  = Timer <= 0;
         _tickAccum     = 0f;
 
-        // 라운드가 이미 종료된 상태였다면 수집 단계 재개 불가 → 시작 버튼 표시
+        // 라운드가 이미 종료된 상태면 시작 버튼 표시
         if (Timer <= 0)
             _startView.ActivateButton(true);
     }
@@ -80,8 +79,14 @@ public class GameManager : NetworkBehaviour, IStateAuthorityChanged
 
     public override void FixedUpdateNetwork()
     {
-        // 마스터만 타이머 감산 및 RPC 발사
-        if (!Runner.IsSharedModeMasterClient) return;
+        bool isMaster = Runner.IsSharedModeMasterClient;
+
+        // 마스터가 된 첫 틱 감지 → 로컬 상태 재구성
+        if (isMaster && !_wasMaster)
+            OnBecameMaster();
+        _wasMaster = isMaster;
+
+        if (!isMaster) return;
 
         // 답변 수집 중이면 타임아웃 처리
         if (_collectingAnswers)
