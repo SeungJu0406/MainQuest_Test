@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerSpawner : NetworkBehaviour
 {
     [SerializeField] private PlayerController _playerPrefab;
-
+    [SerializeField] private int _maxPlayerCount = 4;
 
     public List<int> AvailableColorIndex = new();
 
@@ -33,7 +33,7 @@ public class PlayerSpawner : NetworkBehaviour
 
         if (!HasStateAuthority) return;
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < _maxPlayerCount; i++)
             AvailableColorIndex.Add(i);
         _isInitAvailableColors = true;
     }

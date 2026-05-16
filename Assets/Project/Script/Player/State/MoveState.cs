@@ -17,7 +17,7 @@ namespace NSJ_Player
         {
             ReadInput();
             CheckCombat();
-            if (MoveDir.x == 0)
+            if (MoveDir.x == 0 && MoveDir.y == 0)
                 ChangeState(State.Idle);
         }
 

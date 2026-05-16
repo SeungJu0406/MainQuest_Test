@@ -638,6 +638,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _playerPrefab: {fileID: 2108483592802532317, guid: 81066d83a01993943aa7c51fb54b3818, type: 3}
+  _maxPlayerCount: 7
   AvailableColorIndex: 
 --- !u!4 &326136106
 Transform:
@@ -1065,7 +1066,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 3
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 165d810b44f469247accb556463798d8, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 6f921fb8745283842a031ceff3021940, type: 2}
@@ -1497,7 +1498,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1 + 1 = 2
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 165d810b44f469247accb556463798d8, type: 2}
   m_sharedMaterial: {fileID: 8345368200003475013, guid: 165d810b44f469247accb556463798d8, type: 2}
@@ -2867,7 +2868,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC815\uB2F5!\n\n"
+  m_text: '
+
+
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 165d810b44f469247accb556463798d8, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 6f921fb8745283842a031ceff3021940, type: 2}

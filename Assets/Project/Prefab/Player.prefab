@@ -710,7 +710,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 0ccd2b99e9b547b498330df9c7104170, type: 3}
-  m_Color: {r: 1, g: 0.9243814, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -761,8 +761,6 @@ MonoBehaviour:
     Speed: 0.5
     IsUp: 0
   _colorPalette: {fileID: 11400000, guid: 20ec54092565ada468b1a51eacad6c72, type: 2}
-  _move:
-    _moveSpeed: 5
   _battle:
     _attackRadius: 1.5
     _hitStunDuration: 3
@@ -775,8 +773,10 @@ MonoBehaviour:
     _chargeSlider: {fileID: 4806930862717446700}
   _stateMachine:
     PrevState: 0
+  _moveSpeed: 5
   Rb: {fileID: 0}
   MoveDir: {x: 0, y: 0}
+  FacingDirX: 1
   _CurState: 0
   View: {fileID: 0}
 --- !u!58 &486070613601970125
