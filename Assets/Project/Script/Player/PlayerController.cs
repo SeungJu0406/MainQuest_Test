@@ -10,6 +10,10 @@ public class PlayerController : NetworkBehaviour
     [Networked] public int ColorIndex { get; set; }
 
     [SerializeField] private ColorPalette _colorPalette;
+
+    [SerializeField] private PlayerBattleModule _battleModule;
+    [SerializeField] private PlayerMoveModule _moveModule;
+
     [SerializeField] private float _moveSpeed = 5f;
 
     [Header("전투")]
@@ -38,6 +42,13 @@ public class PlayerController : NetworkBehaviour
     private float _chargeValue;
     private bool _isCharging;
     private int _facingDirX = 1;  // 마지막 이동 방향 (-1: 왼쪽, 1: 오른쪽)
+
+    private void Awake()
+    {
+        _battleModule = new PlayerBattleModule(this);
+        _moveModule = new PlayerMoveModule(this);
+
+    }
 
     private void Start()
     {
