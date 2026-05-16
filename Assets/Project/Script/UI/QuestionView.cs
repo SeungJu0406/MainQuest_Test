@@ -28,12 +28,14 @@ public class QuestionView : BaseView
     protected override void SubscribeEvents()
     {
         GameManager.OnQuestionPresented += ShowQuestion;
+        GameManager.OnQuestionPresentedPersonal += ShowQuestion;
         GameManager.OnResultReceived += ShowResult;
     }
 
     private void OnDestroy()
     {
         GameManager.OnQuestionPresented -= ShowQuestion;
+        GameManager.OnQuestionPresentedPersonal -= ShowQuestion;
         GameManager.OnResultReceived -= ShowResult;
     }
 
