@@ -93,29 +93,12 @@ public class PlayerController : NetworkBehaviour
         if (!HasStateAuthority) return;
 
         MoveOwnIndicator();
-
-        if (_battle.IsStunned)
-        {
-            _battle.ResetCharge();
-            return;
-        }
-
         _stateMachine.Update();
     }
 
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
-
-        if (_battle.IsStunned)
-        {
-            if (_battle.TickStunTimer(Runner.DeltaTime))
-            {
-                RPC_BroadcastStunned(false);
-                _stateMachine.ChangeState(PlayerState.State.Idle);
-            }
-            return;
-        }
 
         if (!_colorRequested)
         {
@@ -179,7 +162,11 @@ public class PlayerController : NetworkBehaviour
     public void RPC_GetHit() => _battle.OnHit(_battle.HitStunDuration);
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_BroadcastStunned(NetworkBool stunned) => _battle.OnStunned(stunned);
+    public void RPC_BroadcastStunned(NetworkBool stunned)
+    {
+        _battle.OnStunned(stunned);
+        _stateMachine.ChangeState(stunned ? PlayerState.State.Hit : PlayerState.State.Idle);
+    }
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_GetThrown(float directionX, float force) => _battle.OnThrown(directionX, force);
