@@ -31,14 +31,11 @@ public class AttackState : PlayerState
             ChangeState(State.Idle);
         }
     }
-    public override void FixedUpdate()
-    {
-        
-    }
+    public override void FixedUpdate() { }
 
     public override void FixedUpdateNetwork()
     {
-        
+        StopMovement();
     }
 
     public override void OnDrawGizmos()

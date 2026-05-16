@@ -21,23 +21,24 @@ public class PlayerController : NetworkBehaviour
     }
     [SerializeField] private OwnerIndicatorMoveValue _ownerIndicatorMoveValue;
 
-
     [SerializeField] private ColorPalette _colorPalette;
-    [SerializeField] private PlayerMoveModule _move;
     [SerializeField] private PlayerBattleModule _battle;
     [SerializeField] private PlayerStateMachine _stateMachine;
-
-
+    [SerializeField] private float _moveSpeed = 5f;
 
     [HideInInspector] public Rigidbody2D Rb;
     [HideInInspector] public Vector2 MoveDir;
-    [Networked]public PlayerState.State CurState { get; set; }
+    [HideInInspector] public int FacingDirX = 1;
+    [Networked] public PlayerState.State CurState { get; set; }
     [HideInInspector] public PlayerView View;
+
+    public float MoveSpeed => _moveSpeed;
+    public PlayerBattleModule Battle => _battle;
+    public bool IsStunned => _battle.IsStunned;
+
     private ChangeDetector _changes;
     private bool _colorRequested;
     private SpriteRenderer _renderer;
-
-    public bool IsStunned => _battle.IsStunned;
 
     private void Awake()
     {
@@ -57,7 +58,6 @@ public class PlayerController : NetworkBehaviour
         _changes = GetChangeDetector(ChangeDetector.Source.SimulationState);
 
         ApplyColor(ColorIndex);
-        _move.Init(this, Rb);
         _battle.Init(this, Rb, Runner);
         _stateMachine.Initialize(this);
 
@@ -65,8 +65,7 @@ public class PlayerController : NetworkBehaviour
             Owner = Runner.LocalPlayer;
         _ownerIndicator.SetActive(Owner == Runner.LocalPlayer);
 
-        if (HasStateAuthority == false)   
-            return;       
+        if (!HasStateAuthority) return;
 
         ChangeState(PlayerState.State.Idle);
     }
@@ -93,12 +92,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
-        _stateMachine.Update();
-
         MoveOwnIndicator();
-
-        _battle.UpdateBattle(_move.FacingDirX);
-        _move.ReadInput();
 
         if (_battle.IsStunned)
         {
@@ -106,18 +100,20 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
+        _stateMachine.Update();
     }
 
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
 
-        _stateMachine.FixedUpdateNetwork();
-
         if (_battle.IsStunned)
         {
             if (_battle.TickStunTimer(Runner.DeltaTime))
+            {
                 RPC_BroadcastStunned(false);
+                _stateMachine.ChangeState(PlayerState.State.Idle);
+            }
             return;
         }
 
@@ -134,7 +130,7 @@ public class PlayerController : NetworkBehaviour
             spawner.RPC_DequeueColor(colorIndex);
         }
 
-        _move.ApplyMovement();
+        _stateMachine.FixedUpdateNetwork();
     }
 
     public override void Render()
@@ -152,40 +148,26 @@ public class PlayerController : NetworkBehaviour
         if (col.gameObject.layer == LayerMask.NameToLayer("Wall"))
             _battle.OnWallHit();
     }
-    //=====================================================================================
 
-    /// <summary>
-    /// 상태를 교체합니다.
-    /// </summary>
-    /// <param name="state"></param>
     public void ChangeState(PlayerState.State state, Action callback = null) => _stateMachine.ChangeState(state, callback);
     public PlayerState GetCurState() => _stateMachine.GetCurState();
     public PlayerState GetPrevState() => _stateMachine.GetPrevState();
+
     private void MoveOwnIndicator()
     {
-        if (_ownerIndicator.activeSelf == true)
-        {
-            // 하드코딩 
-            // IsUp가 true면 MaxY로, false면 MinY로 이동
-            // 최대에서 IsUp가 true면 false로, 최소에서 IsUp가 false면 true로 변경
-            _ownerIndicator.transform.localPosition = new Vector3(
-                _ownerIndicator.transform.localPosition.x,
-                  _ownerIndicator.transform.localPosition.y + _ownerIndicatorMoveValue.Speed * (_ownerIndicatorMoveValue.IsUp ? 1 : -1) * Time.deltaTime,
-                _ownerIndicator.transform.localPosition.z);
+        if (!_ownerIndicator.activeSelf) return;
 
-            if (_ownerIndicator.transform.localPosition.y >= _ownerIndicatorMoveValue.MaxY)
-            {
-                _ownerIndicatorMoveValue.IsUp = false;
+        _ownerIndicator.transform.localPosition = new Vector3(
+            _ownerIndicator.transform.localPosition.x,
+            _ownerIndicator.transform.localPosition.y + _ownerIndicatorMoveValue.Speed * (_ownerIndicatorMoveValue.IsUp ? 1 : -1) * Time.deltaTime,
+            _ownerIndicator.transform.localPosition.z);
 
-            }
-            else if (_ownerIndicator.transform.localPosition.y <= _ownerIndicatorMoveValue.MinY)
-            {
-                _ownerIndicatorMoveValue.IsUp = true;
-            }
-        }
+        if (_ownerIndicator.transform.localPosition.y >= _ownerIndicatorMoveValue.MaxY)
+            _ownerIndicatorMoveValue.IsUp = false;
+        else if (_ownerIndicator.transform.localPosition.y <= _ownerIndicatorMoveValue.MinY)
+            _ownerIndicatorMoveValue.IsUp = true;
     }
 
-    // 다른 플레이어의 BattleModule이 이 플레이어의 인디케이터/슬라이더를 제어할 때 사용
     public void SetNearbyIndicator(bool show, bool showCharge) => _battle.SetNearbyIndicator(show, showCharge);
     public void UpdateChargeSliderValue(float value) => _battle.UpdateChargeSliderValue(value);
 

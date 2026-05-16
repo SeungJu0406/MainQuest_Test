@@ -38,7 +38,7 @@ namespace NSJ_Player
             return _states[(int)PrevState];
         }
         /// <summary>
-        /// »óÅÂ¸¦ ±³Ã¼ÇÕ´Ï´Ù.
+        /// ï¿½ï¿½ï¿½Â¸ï¿½ ï¿½ï¿½Ã¼ï¿½Õ´Ï´ï¿½.
         /// </summary>
         /// <param name="state"></param>
         public void ChangeState(PlayerState.State state, Action callback = null)
@@ -82,16 +82,17 @@ namespace NSJ_Player
         }
 
         /// <summary>
-        /// »óÅÂ °´Ã¼¸¦ ¸¸µì´Ï´Ù
+        /// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½
         /// </summary>
         private void BindState()
         {
             _states = new PlayerState[(int)PlayerState.State.SIZE];
 
-            _states[(int)PlayerState.State.Idle] = new IdleState(_controller);
-            _states[(int)PlayerState.State.Move] = new MoveState(_controller);
-            _states[(int)PlayerState.State.Attack] = new AttackState(_controller);
-            //[(int)PlayerState.State.Throw] = new ThrowState(_controller);
+            _states[(int)PlayerState.State.Idle]     = new IdleState(_controller);
+            _states[(int)PlayerState.State.Move]     = new MoveState(_controller);
+            _states[(int)PlayerState.State.Attack]   = new AttackState(_controller);
+            _states[(int)PlayerState.State.Throw]    = new ThrowState(_controller);
+            _states[(int)PlayerState.State.Charging] = new ChargingState(_controller);
         }
     }
 }
