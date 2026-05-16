@@ -287,7 +287,7 @@ GameObject:
   m_Component:
   - component: {fileID: 204815360}
   - component: {fileID: 204815361}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ColliderWall1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1326,7 +1326,7 @@ GameObject:
   m_Component:
   - component: {fileID: 735174842}
   - component: {fileID: 735174843}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ColliderWall1 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1929,7 +1929,7 @@ GameObject:
   m_Component:
   - component: {fileID: 960529378}
   - component: {fileID: 960529379}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ColliderWall1 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2696,7 +2696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1850257448}
   - component: {fileID: 1850257449}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ColliderWall1 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
