@@ -23,10 +23,10 @@ public class StartView : BaseView
 
     protected override void SubscribeEvents()
     {
-        _startButton.onClick.AddListener(Restart);
+        _startButton.onClick.AddListener(StartGame);
     }
 
-    private void Restart()
+    private void StartGame()
     {
         Manager.GameManager.StartRound();
         _startButton.gameObject.SetActive(false);
