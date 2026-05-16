@@ -13,6 +13,8 @@ public class GameManager : NetworkBehaviour
 
     // 모든 클라이언트에 동기화되는 타이머 (마스터가 감산)
     [Networked] public int Timer { get; private set; }
+    // 현재 문제 인덱스 — 마스터 교체 시 새 마스터가 이어받을 수 있도록 동기화
+    [Networked] private int CurrentQuestionIndex { get; set; }
 
     // UI(MonoBehaviour)가 구독하는 정적 이벤트
     public static event Action<string> OnQuestionPresented;  // 문제 텍스트
@@ -20,7 +22,6 @@ public class GameManager : NetworkBehaviour
     public static event Action         OnRoundEnded;         // 라운드 종료
     public static event Action<bool>   OnResultReceived;     // 내 정답 여부
 
-    private int _currentIndex;
     private bool _countdownSent;   // 5초 RPC 중복 방지
     private bool _roundEndSent;    // 0초 RPC 중복 방지
 
@@ -30,7 +31,7 @@ public class GameManager : NetworkBehaviour
     private float _collectTimer;
     private const float CollectTimeout = 2f;  // 전원 미제출 시 강제 마감 시간
 
-    private bool _correctIsO;  // 현재 문제 정답
+    private bool _correctIsO;  // 현재 문제 정답 (CurrentQuestionIndex로 언제든 재구성 가능)
 
     public override void Spawned()
     {
@@ -42,11 +43,31 @@ public class GameManager : NetworkBehaviour
         _startView.ActivateButton(true);
     }
 
+    // 마스터 교체 시 Fusion이 호출 — 새 마스터가 동기화된 값으로 로컬 상태 재구성
+    public override void OnStateAuthorityChanged()
+    {
+        if (!Runner.IsSharedModeMasterClient) return;
+
+        // CurrentQuestionIndex, Timer는 이미 [Networked]로 동기화되어 있음
+        // _correctIsO만 인덱스로 재파생
+        if (_questionData != null && _questionData.Questions.Length > 0)
+            _correctIsO = _questionData.Questions[CurrentQuestionIndex % _questionData.Questions.Length].CorrectIsO;
+
+        // Timer 상태에 맞게 플래그 복원 (_tickAccum은 최대 1초 오차로 허용)
+        _countdownSent = Timer <= 5;
+        _roundEndSent  = Timer <= 0;
+        _tickAccum     = 0f;
+
+        // 라운드가 이미 종료된 상태였다면 수집 단계 재개 불가 → 시작 버튼 표시
+        if (Timer <= 0)
+            _startView.ActivateButton(true);
+    }
+
     public void StartRound()
     {
         if (_questionData == null || _questionData.Questions.Length == 0) return;
 
-        var q = _questionData.Questions[_currentIndex % _questionData.Questions.Length];
+        var q = _questionData.Questions[CurrentQuestionIndex % _questionData.Questions.Length];
         _correctIsO = q.CorrectIsO;
         Timer = _roundTime;
         _countdownSent = false;
@@ -185,8 +206,8 @@ public class GameManager : NetworkBehaviour
             RPC_AnnounceResult(kvp.Key, correct);
         }
 
-        // 다음 라운드 준비 (3초 후 — 간단히 Invoke로 처리)
-        _currentIndex++;
+        // 다음 문제 인덱스 증가 — [Networked]라 새 마스터도 이어받음
+        CurrentQuestionIndex++;
 
         // 마스터 클라이언트의 재시작 버튼 클릭 후 시작
         _startView.ActivateButton(true);
