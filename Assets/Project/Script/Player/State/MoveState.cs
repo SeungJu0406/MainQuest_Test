@@ -46,26 +46,18 @@ namespace NSJ_Player
 
         public override void Update()
         {
-            //CheckInput();
-            //Move();
+            CheckInput();
         }
+
 
 
         private void CheckInput()
         {
-            //if (MoveDir.x == 0)
-            //{
-            //    ChangeState(State.Idle);
-            //}
-            //if (Player.IsGrounded == false)
-            //{
-            //    ChangeState(State.Fall);
-            //}
+            if (MoveDir.x == 0)
+            {
+                ChangeState(State.Idle);
+            }
         }
 
-        private void Move()
-        {
-
-        }
     }
 }

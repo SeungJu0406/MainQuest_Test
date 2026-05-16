@@ -20,7 +20,7 @@ namespace NSJ_Player
         }
         public override void Update()
         {
-           
+            CheckInput();
         }
         public override void FixedUpdateNetwork()
         {
@@ -33,6 +33,15 @@ namespace NSJ_Player
         public override void OnDrawGizmos()
         {
 
+        }
+
+        private void CheckInput()
+        {
+            if (MoveDir.x != 0)
+            {
+                ChangeState(State.Move);
+            }
+ 
         }
 
 

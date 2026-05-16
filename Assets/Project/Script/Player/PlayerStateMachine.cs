@@ -90,6 +90,8 @@ namespace NSJ_Player
 
             _states[(int)PlayerState.State.Idle] = new IdleState(_controller);
             _states[(int)PlayerState.State.Move] = new MoveState(_controller);
+            _states[(int)PlayerState.State.Attack] = new AttackState(_controller);
+            //[(int)PlayerState.State.Throw] = new ThrowState(_controller);
         }
     }
 }

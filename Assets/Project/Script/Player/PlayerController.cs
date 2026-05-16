@@ -65,7 +65,8 @@ public class PlayerController : NetworkBehaviour
             Owner = Runner.LocalPlayer;
         _ownerIndicator.SetActive(Owner == Runner.LocalPlayer);
 
-        if (HasStateAuthority == false) return;
+        if (HasStateAuthority == false)   
+            return;       
 
         ChangeState(PlayerState.State.Idle);
     }
@@ -92,16 +93,11 @@ public class PlayerController : NetworkBehaviour
     {
         if (!HasStateAuthority) return;
 
-        if (Input.GetKeyDown(KeyCode.V))
-        {
-            //Test용
-            _stateMachine.ChangeState(PlayerState.State.Move);
-        }
-
         _stateMachine.Update();
 
         MoveOwnIndicator();
 
+        _battle.UpdateBattle(_move.FacingDirX);
         _move.ReadInput();
 
         if (_battle.IsStunned)
@@ -110,7 +106,6 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        _battle.UpdateBattle(_move.FacingDirX);
     }
 
     public override void FixedUpdateNetwork()

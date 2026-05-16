@@ -71,7 +71,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.001, y: 1.01}
+  m_AnchoredPosition: {x: -0.001, y: 1.377}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4806930862717446700
@@ -309,7 +309,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0.457}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4431885826938124111
@@ -509,7 +509,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0.596}
   m_SizeDelta: {x: 0.89, y: 0.56}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4326939463715834443
@@ -775,10 +775,9 @@ MonoBehaviour:
     _chargeSlider: {fileID: 4806930862717446700}
   _stateMachine:
     PrevState: 0
-    CurState: 0
   Rb: {fileID: 0}
   MoveDir: {x: 0, y: 0}
-  CurState: 0
+  _CurState: 0
   View: {fileID: 0}
 --- !u!58 &486070613601970125
 CircleCollider2D:

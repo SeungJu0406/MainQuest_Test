@@ -8,10 +8,8 @@ namespace NSJ_Player
         {
             Idle,
             Move,
-            UseBox,
-            Hit,
-            Dead,
-            Fall,
+            Attack,
+            Throw,
             SIZE
         }
 

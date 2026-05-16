@@ -1,4 +1,5 @@
 using Fusion;
+using NSJ_Player;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -64,6 +65,7 @@ public class PlayerBattleModule
 
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                _controller.ChangeState(PlayerState.State.Attack);
                 _nearby.RPC_GetHit();
             }
          

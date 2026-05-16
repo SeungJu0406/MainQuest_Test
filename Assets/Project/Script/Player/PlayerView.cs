@@ -15,6 +15,11 @@ public class PlayerView : NetworkBehaviour
         _animator = GetComponent<Animator>();
     }
 
+    public void PlayAnimation(string anim)
+    {
+        if (_animator == null) return;
+        _animator.Play(anim);
+    }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_PlayAnimation(string anim)
