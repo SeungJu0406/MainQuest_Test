@@ -8,6 +8,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private QuestionData _questionData;
     [SerializeField] private OXZone _oZone;
     [SerializeField] private OXZone _xZone;
+    [SerializeField] private StartView _startView;
     [SerializeField] private int _roundTime = 15;  // 라운드당 제한 시간(초)
 
     // 모든 클라이언트에 동기화되는 타이머 (마스터가 감산)
@@ -38,10 +39,10 @@ public class GameManager : NetworkBehaviour
         // 마스터 클라이언트만 게임 진행을 주도
         if (!Runner.IsSharedModeMasterClient) return;
 
-        StartRound();
+        _startView.ActivateButton(true);
     }
 
-    private void StartRound()
+    public void StartRound()
     {
         if (_questionData == null || _questionData.Questions.Length == 0) return;
 
@@ -186,6 +187,8 @@ public class GameManager : NetworkBehaviour
 
         // 다음 라운드 준비 (3초 후 — 간단히 Invoke로 처리)
         _currentIndex++;
-        Invoke(nameof(StartRound), 3f);
+
+        // 마스터 클라이언트의 재시작 버튼 클릭 후 시작
+        _startView.ActivateButton(true);
     }
 }

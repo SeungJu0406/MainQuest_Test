@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "QuestionData", menuName = "OX Quiz/Question Data")]
+[CreateAssetMenu(fileName = "QuestionData", menuName = "Scriptable Objects/OX Quiz/Question Data")]
 public class QuestionData : ScriptableObject
 {
     [System.Serializable]
