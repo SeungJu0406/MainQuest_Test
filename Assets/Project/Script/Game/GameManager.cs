@@ -1,6 +1,6 @@
+using Fusion;
 using System;
 using System.Collections.Generic;
-using Fusion;
 using UnityEngine;
 
 public class GameManager : NetworkBehaviour
@@ -18,9 +18,10 @@ public class GameManager : NetworkBehaviour
 
     // UI(MonoBehaviour)가 구독하는 정적 이벤트
     public static event Action<string> OnQuestionPresented;  // 문제 텍스트
-    public static event Action         OnCountdownStarted;   // 5초 전 카운트다운 팝업
-    public static event Action         OnRoundEnded;         // 라운드 종료
-    public static event Action<bool>   OnResultReceived;     // 내 정답 여부
+    public static event Action<string> OnQuestionPresentedPersonal;  // 문제 텍스트 (개인용, 필요 시 추가)
+    public static event Action<int> OnCountdownStarted;   // 5초 전 카운트다운 팝업
+    public static event Action OnRoundEnded;         // 라운드 종료
+    public static event Action<bool> OnResultReceived;     // 내 정답 여부
 
     private bool _countdownSent;   // 5초 RPC 중복 방지
     private bool _roundEndSent;    // 0초 RPC 중복 방지
@@ -34,9 +35,17 @@ public class GameManager : NetworkBehaviour
     private bool _correctIsO;    // 현재 문제 정답 (CurrentQuestionIndex로 언제든 재구성 가능)
     private bool _wasMaster;     // 이전 틱에 마스터였는지 — 마스터 교체 감지용
 
+    QuestionData.Question _curQuation => _questionData.Questions[CurrentQuestionIndex % _questionData.Questions.Length];
+
     public override void Spawned()
     {
         Manager.SetGameManager(this);
+
+        // 게임 진행중에 들어왔을 떄 현재 문제 전광판에 띄우기
+        if (Timer > 0)
+        {
+            OnQuestionPresentedPersonal?.Invoke(_curQuation.Text);
+        }
 
         if (!Runner.IsSharedModeMasterClient) return;
 
@@ -54,8 +63,8 @@ public class GameManager : NetworkBehaviour
 
         // Timer 상태에 맞게 플래그 복원 (_tickAccum은 최대 1초 오차 허용)
         _countdownSent = Timer <= 5;
-        _roundEndSent  = Timer <= 0;
-        _tickAccum     = 0f;
+        _roundEndSent = Timer <= 0;
+        _tickAccum = 0f;
 
         // 라운드가 이미 종료된 상태면 시작 버튼 표시
         if (Timer <= 0)
@@ -79,6 +88,7 @@ public class GameManager : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+
         bool isMaster = Runner.IsSharedModeMasterClient;
 
         // 마스터가 된 첫 틱 감지 → 로컬 상태 재구성
@@ -108,10 +118,10 @@ public class GameManager : NetworkBehaviour
         }
 
         // 5초 전: 카운트다운 UI 신호
-        if (Timer <= 5 && !_countdownSent)
+        if (Timer <= 5 && !_roundEndSent)
         {
-            _countdownSent = true;
-            RPC_ShowCountdown();
+            // _countdownSent = true;
+            RPC_ShowCountdown(Timer);
         }
 
         // 종료: 라운드 종료 신호
@@ -137,9 +147,9 @@ public class GameManager : NetworkBehaviour
 
     // 5초 전 카운트다운 팝업 신호
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_ShowCountdown()
+    private void RPC_ShowCountdown(int count)
     {
-        OnCountdownStarted?.Invoke();
+        OnCountdownStarted?.Invoke(count);
     }
 
     // 라운드 종료: 각 클라이언트가 본인 위치로 정답 판정 후 제출
@@ -169,8 +179,6 @@ public class GameManager : NetworkBehaviour
         // 본인 결과만 처리
         if (Runner.LocalPlayer != player) return;
 
-        string resultText = correct ? "정답!" : "오답!";
-        Debug.Log($"[OX] {resultText}");
         OnResultReceived?.Invoke(correct);
     }
 
