@@ -9,11 +9,28 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private ColorPalette _colorPalette;
     [SerializeField] private float _moveSpeed = 5f;
 
+    [Header("전투")]
+    [SerializeField] private float _attackRadius = 1.5f;
+    [SerializeField] private float _hitStunDuration = 2f;    // 맞았을 때 기절 시간
+    [SerializeField] private float _wallStunDuration = 1.5f; // 벽 충돌 후 기절 시간
+    [SerializeField] private float _maxThrowForce = 15f;
+    [SerializeField] private float _maxChargeTime = 2f;
+    [SerializeField] private GameObject _nearbyIndicator;    // 상대 플레이어 프리팹의 자식 UI
+
     private Vector2 _moveDir;
     private Rigidbody2D _rb;
     private ChangeDetector _changes;
     private bool _colorRequested;
 
+    // 기절 상태 (RPC_BroadcastStunned로 전체 동기화)
+    public bool IsStunned { get; private set; }
+    private bool _isThrown;       // 날아가는 중 — 벽 감지용
+    private float _stunTimer;     // 피격자 로컬 타이머
+
+    // 공격자 로컬 상태
+    private float _chargeValue;
+    private bool _isCharging;
+    private int _facingDirX = 1;  // 마지막 이동 방향 (-1: 왼쪽, 1: 오른쪽)
 
     public override void Spawned()
     {
@@ -37,12 +54,55 @@ public class PlayerController : NetworkBehaviour
     private void Update()
     {
         if (!HasStateAuthority) return;
+
+        // 이동 입력 + facing 방향 추적
         _moveDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+        if (_moveDir.x != 0)
+            _facingDirX = _moveDir.x > 0 ? 1 : -1;
+
+        if (IsStunned) return;
+
+        // 근접 플레이어 감지
+        PlayerController nearby = FindNearbyPlayer();
+
+        // 인디케이터: 내 화면에서 근처 플레이어 표시
+        UpdateNearbyIndicator(nearby);
+
+        if (nearby == null) return;
+
+        if (!nearby.IsStunned)
+        {
+            // 기절 공격
+            if (Input.GetKeyDown(KeyCode.Space))
+                nearby.RPC_GetHit();
+        }
+        else
+        {
+            // 차징
+            if (Input.GetKey(KeyCode.Space))
+            {
+                _isCharging = true;
+                _chargeValue = Mathf.Min(_chargeValue + Time.deltaTime / _maxChargeTime, 1f);
+            }
+
+            // 던지기
+            if (Input.GetKeyUp(KeyCode.Space) && _isCharging)
+                TryThrow(nearby);
+        }
     }
 
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
+
+        // 기절 중: 타이머 감산, 이동 차단
+        if (IsStunned)
+        {
+            _stunTimer -= Runner.DeltaTime;
+            if (_stunTimer <= 0f)
+                RPC_BroadcastStunned(false);
+            return;
+        }
 
         if (!_colorRequested)
         {
@@ -53,8 +113,7 @@ public class PlayerController : NetworkBehaviour
             _colorRequested = true;
 
             int colorIndex = spawner.AvailableColorIndex[spawner.AvailableColorIndex.Count - 1];
-
-            ColorIndex = colorIndex;                  // 본인 StateAuthority라 직접 세팅
+            ColorIndex = colorIndex;
             spawner.RPC_DequeueColor(colorIndex);
         }
 
@@ -69,6 +128,91 @@ public class PlayerController : NetworkBehaviour
                 ApplyColor(ColorIndex);
         }
     }
+
+    // ──────────────────────────────────────────
+    // 전투 로직
+    // ──────────────────────────────────────────
+
+    private PlayerController FindNearbyPlayer()
+    {
+        var hits = Physics2D.OverlapCircleAll(transform.position, _attackRadius);
+        foreach (var hit in hits)
+        {
+            var pc = hit.GetComponent<PlayerController>();
+            if (pc == null || pc == this) continue;
+            return pc;
+        }
+        return null;
+    }
+
+    // 상대 플레이어의 인디케이터를 내 화면에서만 제어 (로컬 전용)
+    private void UpdateNearbyIndicator(PlayerController nearby)
+    {
+        foreach (var netObj in Runner.GetAllNetworkObjects())
+        {
+            var pc = netObj.GetComponent<PlayerController>();
+            if (pc == null || pc == this) continue;
+            if (pc._nearbyIndicator != null)
+                pc._nearbyIndicator.SetActive(pc == nearby);
+        }
+    }
+
+    private void TryThrow(PlayerController target)
+    {
+        float force = _chargeValue * _maxThrowForce;
+        _chargeValue = 0f;
+        _isCharging = false;
+        target.RPC_GetThrown(_facingDirX, force);
+    }
+
+    // 날아가다 벽에 충돌 — 피격자 클라이언트에서만 처리
+    private void OnCollisionEnter2D(Collision2D col)
+    {
+        if (!HasStateAuthority || !_isThrown) return;
+        if (col.gameObject.layer == LayerMask.NameToLayer("Wall"))
+        {
+            _isThrown = false;
+            _rb.linearVelocity = Vector2.zero;
+            _stunTimer = _wallStunDuration;  // 벽 충돌 후 기절 시간으로 리셋
+        }
+    }
+
+    // ──────────────────────────────────────────
+    // RPC
+    // ──────────────────────────────────────────
+
+    // 공격자 → 피격자: 기절 요청
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_GetHit()
+    {
+        _stunTimer = _hitStunDuration;
+        RPC_BroadcastStunned(true);
+    }
+
+    // 피격자 → 전체: 기절 상태 동기화
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_BroadcastStunned(NetworkBool stunned)
+    {
+        IsStunned = stunned;
+        if (!stunned)
+        {
+            _isThrown = false;
+            _rb.linearVelocity = Vector2.zero;
+        }
+    }
+
+    // 공격자 → 피격자: 던지기 요청
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_GetThrown(float directionX, float force)
+    {
+        _isThrown = true;
+        _rb.linearVelocity = Vector2.zero;
+        _rb.AddForce(new Vector2(directionX, 0f) * force, ForceMode2D.Impulse);
+    }
+
+    // ──────────────────────────────────────────
+    // 유틸
+    // ──────────────────────────────────────────
 
     private void ApplyColor(int index)
     {
