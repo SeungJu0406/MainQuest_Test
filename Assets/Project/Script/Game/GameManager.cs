@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
-public class GameManager : NetworkBehaviour
+public class GameManager : NetworkBehaviour, IStateAuthorityChanged
 {
     [SerializeField] private QuestionData _questionData;
     [SerializeField] private OXZone _oZone;
@@ -44,7 +44,7 @@ public class GameManager : NetworkBehaviour
     }
 
     // 마스터 교체 시 Fusion이 호출 — 새 마스터가 동기화된 값으로 로컬 상태 재구성
-    public override void OnStateAuthorityChanged()
+    public void StateAuthorityChanged()
     {
         if (!Runner.IsSharedModeMasterClient) return;
 
