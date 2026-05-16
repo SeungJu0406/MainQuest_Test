@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class HitState : PlayerState
 {
+    
+
     public HitState(PlayerController player) : base(player) { }
 
     public override void Enter()
@@ -19,8 +21,8 @@ public class HitState : PlayerState
 
     public override void FixedUpdateNetwork()
     {
-        StopMovement();
-        if (Player.Battle.TickStunTimer(Runner.DeltaTime))
+        //StopMovement();
+        if (Player.Battle.TickStunTimer(Player.Runner.DeltaTime))
             Player.RPC_BroadcastStunned(false);
     }
 

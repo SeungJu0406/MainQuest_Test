@@ -165,6 +165,8 @@ public class PlayerController : NetworkBehaviour
     public void RPC_BroadcastStunned(NetworkBool stunned)
     {
         _battle.OnStunned(stunned);
+
+        if (HasStateAuthority == false) return;
         _stateMachine.ChangeState(stunned ? PlayerState.State.Hit : PlayerState.State.Idle);
     }
 
