@@ -28,9 +28,14 @@ public class CountDownView : BaseView
 
     protected override void SubscribeEvents()
     {
-
         GameManager.OnCountdownStarted += StartCountdown;
         GameManager.OnRoundEnded += HideCountdown;
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.OnCountdownStarted -= StartCountdown;
+        GameManager.OnRoundEnded -= HideCountdown;
     }
     private void Update()
     {

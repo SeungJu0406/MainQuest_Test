@@ -31,6 +31,12 @@ public class QuestionView : BaseView
         GameManager.OnResultReceived += ShowResult;
     }
 
+    private void OnDestroy()
+    {
+        GameManager.OnQuestionPresented -= ShowQuestion;
+        GameManager.OnResultReceived -= ShowResult;
+    }
+
     private void ShowQuestion(string question)
     {
         if (_questionText != null)
