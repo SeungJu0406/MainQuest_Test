@@ -72,7 +72,11 @@ public class PlayerController : NetworkBehaviour
         if (_moveDir.x != 0)
             _facingDirX = _moveDir.x > 0 ? 1 : -1;
 
-        if (IsStunned) return;
+        if (IsStunned)
+        {
+            ResetChargeValue();
+            return;
+        }
 
 
         if (_nearby == null) return;
@@ -80,12 +84,8 @@ public class PlayerController : NetworkBehaviour
         if (!_nearby.IsStunned)
         {
             // 차지상태라면 밸류 초기화
-            if (_isCharging == true)
-            {
-                _isCharging = false;
-                _chargeValue = 0f;
-            }
-          
+            ResetChargeValue();
+
             // 기절 공격
             if (Input.GetKeyDown(KeyCode.Space))
                 _nearby.RPC_GetHit();
@@ -222,6 +222,16 @@ public class PlayerController : NetworkBehaviour
         _chargeValue = 0f;
         _isCharging = false;
         target.RPC_GetThrown(_facingDirX, force);
+    }
+
+    private void ResetChargeValue()
+    {
+        // 차지상태라면 밸류 초기화
+        if (_isCharging == true)
+        {
+            _isCharging = false;
+            _chargeValue = 0f;
+        }
     }
 
     // 날아가다 벽에 충돌 — 피격자 클라이언트에서만 처리
