@@ -1,6 +1,8 @@
 using Fusion;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Utility;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -25,6 +27,8 @@ public class PlayerController : NetworkBehaviour
     private ChangeDetector _changes;
     private bool _colorRequested;
 
+    private PlayerController _nearby;   // 근처 플레이어 캐싱 (로컬 전용)
+
     // 기절 상태 (RPC_BroadcastStunned로 전체 동기화)
     public bool IsStunned { get; private set; }
     private bool _isThrown;       // 날아가는 중 — 벽 감지용
@@ -34,6 +38,11 @@ public class PlayerController : NetworkBehaviour
     private float _chargeValue;
     private bool _isCharging;
     private int _facingDirX = 1;  // 마지막 이동 방향 (-1: 왼쪽, 1: 오른쪽)
+
+    private void Start()
+    {
+        StartCoroutine(MilliSecondUpdate());
+    }
 
     public override void Spawned()
     {
@@ -65,19 +74,21 @@ public class PlayerController : NetworkBehaviour
 
         if (IsStunned) return;
 
-        // 근접 플레이어 감지
-        PlayerController nearby = FindNearbyPlayer();
 
-        // 인디케이터: 내 화면에서 근처 플레이어 표시
-        UpdateNearbyIndicator(nearby);
+        if (_nearby == null) return;
 
-        if (nearby == null) return;
-
-        if (!nearby.IsStunned)
+        if (!_nearby.IsStunned)
         {
+            // 차지상태라면 밸류 초기화
+            if (_isCharging == true)
+            {
+                _isCharging = false;
+                _chargeValue = 0f;
+            }
+          
             // 기절 공격
             if (Input.GetKeyDown(KeyCode.Space))
-                nearby.RPC_GetHit();
+                _nearby.RPC_GetHit();
         }
         else
         {
@@ -86,12 +97,35 @@ public class PlayerController : NetworkBehaviour
             {
                 _isCharging = true;
                 _chargeValue = Mathf.Min(_chargeValue + Time.deltaTime / _maxChargeTime, 1f);
-                UpdateChargeSlider(nearby, _chargeValue);
+                UpdateChargeSlider(_nearby, _chargeValue);
             }
 
             // 던지기
             if (Input.GetKeyUp(KeyCode.Space) && _isCharging)
-                TryThrow(nearby);
+                TryThrow(_nearby);
+        }
+    }
+
+    private IEnumerator MilliSecondUpdate()
+    {
+        while (true)
+        {
+            if (!HasStateAuthority) { yield return null; continue; }
+
+            // 근접 플레이어 감지
+            PlayerController curNearby = FindNearbyPlayer();
+            // 인디케이터: 내 화면에서 근처 플레이어 표시
+            if(curNearby != _nearby)
+            {
+                // 차지상태 리셋
+                _isCharging = false;
+                _chargeValue = 0;
+            }
+
+            _nearby = curNearby;
+            UpdateNearbyIndicator(_nearby);
+
+            yield return 0.05f.Second();
         }
     }
 
@@ -159,7 +193,7 @@ public class PlayerController : NetworkBehaviour
             if (pc._nearbyIndicator != null)
             {
                 pc._nearbyIndicator.SetActive(pc == nearby);
-                pc._chargeSlider.gameObject.SetActive(pc == nearby && _isCharging);
+                pc._chargeSlider.gameObject.SetActive(pc == nearby && _isCharging && nearby.IsStunned == true);
             }
 
         }
