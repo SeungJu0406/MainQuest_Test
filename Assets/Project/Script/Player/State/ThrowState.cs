@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ThrowState : PlayerState
 {
-    private float _throwDuration = 0.438f;
+    private float _throwDuration = 0.357f;
     private float _throwTimer = 0f;
 
     public ThrowState(PlayerController player) : base(player) { }

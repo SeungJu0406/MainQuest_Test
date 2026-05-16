@@ -11,6 +11,7 @@ namespace NSJ_Player
             Attack,
             Throw,
             Charging,
+            Hit,
             SIZE
         }
 

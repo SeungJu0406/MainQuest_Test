@@ -7,6 +7,7 @@ public class ChargingState : PlayerState
 
     public override void Enter()
     {
+        View.RPC_PlayAnimation("Hit");
         Player.Battle.ResetCharge();
     }
 

@@ -82,7 +82,7 @@ namespace NSJ_Player
         }
 
         /// <summary>
-        /// ���� ��ü�� ����ϴ�
+        /// 상태 세팅
         /// </summary>
         private void BindState()
         {
@@ -93,6 +93,7 @@ namespace NSJ_Player
             _states[(int)PlayerState.State.Attack]   = new AttackState(_controller);
             _states[(int)PlayerState.State.Throw]    = new ThrowState(_controller);
             _states[(int)PlayerState.State.Charging] = new ChargingState(_controller);
+            _states[(int)PlayerState.State.Hit]      = new HitState(_controller);
         }
     }
 }
