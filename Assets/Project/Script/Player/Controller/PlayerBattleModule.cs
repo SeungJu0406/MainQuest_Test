@@ -119,6 +119,7 @@ public class PlayerBattleModule
         _isThrown = false;
         _rb.linearVelocity = Vector2.zero;
         _stunTimer = _wallStunDuration;
+        _controller.RPC_BroadcastStunned(true);
     }
 
     // ── 인디케이터 / 슬라이더 (PlayerController에서 위임받아 호출) ──
